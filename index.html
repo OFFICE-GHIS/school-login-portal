@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grace Hope International School Portal</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(120deg, #004aad, #0099ff);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+    .card {
+      background: rgba(255,255,255,0.15);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      width: 320px;
+    }
+    input, button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      background: #fff;
+      color: #004aad;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #e0e0e0;
+    }
+    h1 { margin-bottom: 10px; }
+    #msg { color: #ffcccc; font-size: 14px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card" id="loginBox">
+    <h1>GHIS Portal</h1>
+    <small>Grace Hope International School</small>
+    <input type="email" id="email" placeholder="Your school email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn">Register</button>
+    <button id="googleBtn">Sign in with Google</button>
+    <p id="msg"></p>
+  </div>
+
+  <div id="welcomeBox" class="card hidden">
+    <h2>Welcome 🎓</h2>
+    <p id="userEmail"></p>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    const loginBox = document.getElementById("loginBox");
+    const welcomeBox = document.getElementById("welcomeBox");
+    const userEmail = document.getElementById("userEmail");
+    const msg = document.getElementById("msg");
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        if (!user.email.endsWith("@ghis-edu.online")) {
+          signOut(auth);
+          msg.textContent = "Only @ghis-edu.online accounts allowed!";
+          return;
+        }
+        loginBox.classList.add("hidden");
+        welcomeBox.classList.remove("hidden");
+        userEmail.textContent = user.email;
+      } else {
+        loginBox.classList.remove("hidden");
+        welcomeBox.classList.add("hidden");
+      }
+    });
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (err) {
+        msg.textContent = err.message;
+      }
+    });
+
+    document.getElementById("registerBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+        msg.textContent = "Account created successfully!";
+      } catch (err) {
+        msg.textContent = err.message;
+      }
+    });
+
+    document.getElementById("googleBtn").addEventListener("click", async () => {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        if (!result.user.email.endsWith("@ghis-edu.online")) {
+          await signOut(auth);
+          msg.textContent = "Only @ghis-edu.online accounts allowed!";
+        }
+      } catch (err) {
+        msg.textContent = err.message;
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await signOut(auth);
+    });
+  </script>
+</body>
+</html>
